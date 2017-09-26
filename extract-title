@@ -108,11 +108,18 @@ function main {
 
 	# Define output filename
 	output_jpg="${input_file_basename}.jpg"
+	output_webp="${input_file_basename}.webp"
 
 	# Conversion
 	convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_jpg}" && {
 		e_success ""
 		echo "${INPUT_FILE}"[${input_page}] → "${output_jpg}"
+	}
+
+	# Conversion
+	convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_webp}" && {
+		e_success ""
+		echo "${INPUT_FILE}"[${input_page}] → "${output_webp}"
 	}
 
 }
