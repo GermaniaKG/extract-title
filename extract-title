@@ -71,7 +71,219 @@ declare -i input_page=0
 declare -i output_size=1200
 
 # Define output's JPEG quality
-declare -i output_quality=95
+declare -i output_quality=90
+
+
+# Wether to create a PNG file as well
+declare -i create_png=0
+
+# Wether to create a WEBP file as well
+declare -i create_webp=0
+
+# Wether to overwrite existing output files
+declare -i overwrite_output=0
+
+# Keeps anything that does not look like an option,
+# and thus considered input file.
+declare -a input_pdf_array
+
+# List of possible script arguments (getopts)
+# Very much like getopts, expected short options should be appended to the
+# string here. Any option followed by a ':' takes a required argument.
+readonly OPTIONS_LIST="pwq:"
+
+
+
+# --------------------------------------
+# convertPdfToImage()
+#
+# Usage: convertPdfToImage outputfile
+# --------------------------------------
+
+function convertPdfToImage {
+	local output_image="${1}"
+
+	if [ ! -f "${output_image}" ] || [ $overwrite_output -gt 0 ]; then
+		convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_image}" && {
+			file_size_kb="$(du -k "${output_image}" | cut -f1)"
+			e_success ""
+			echo "${INPUT_FILE}"[${input_page}] → "${output_image} (${file_size_kb}kB)"
+		}
+	else
+		e_warning "$(printf '%s exists. Skipped.' "${output_image}")"
+	fi
+}
+
+
+
+
+# ======================================
+#  Options parsing
+# ======================================
+
+# --------------------------------------
+# _require_argument()
+#
+# Usage:
+#   _require_argument <option> <argument>
+#
+# If <argument> is blank or another option, print an error message
+#
+# This function is stolen from William Melody's bash-boilerplate
+# <https://github.com/alphabetum/bash-boilerplate>
+# --------------------------------------
+
+_require_argument() {
+    # Set local variables from arguments.
+    #
+    # NOTE: 'local' is a non-POSIX bash feature and keeps the variable local to
+    # the block of code, as defined by curly braces. It's easiest to just think
+    # of them as local to a function.
+    local _option="${1:-}"
+    local _argument="${2:-}"
+
+    if [[ -z "${_argument}" ]] || [[ "${_argument}" =~ ^- ]]
+    then
+        e_error "$(printf "Option requires a argument: %s\n" "${_option}")"
+    fi
+}
+
+
+# ---------------------------------------
+# Normalize options
+#
+# This section is stolen from William Melody's bash-boilerplate
+# <https://github.com/alphabetum/bash-boilerplate>
+# ---------------------------------------
+
+# iterate over options, breaking -ab into -a -b and --foo=bar into --foo bar
+# also turns -- into --endopts to avoid issues with things like '-o-', the '-'
+# should not indicate the end of options, but be an invalid option (or the
+# argument to the option, such as wget -qO-)
+unset options
+# while the number of arguments is greater than 0
+while ((${#}))
+do
+  case ${1} in
+    # if option is of type -ab
+    -[!-]?*)
+      # loop over each character starting with the second
+      for ((i=1; i<${#1}; i++))
+      do
+        # extract 1 character from position 'i'
+        c=${1:i:1}
+        # add current char to options
+        options+=("-${c}")
+
+        # if option takes a required argument, and it's not the last char
+        # make the rest of the string its argument
+        if [[ ${OPTIONS_LIST} = *"${c}:"* && ${1:i+1} ]]
+        then
+          options+=("${1:i+1}")
+          break
+        fi
+      done
+      ;;
+    # if option is of type --foo=bar, split on first '='
+    --?*=*)
+      options+=("${1%%=*}" "${1#*=}")
+      ;;
+    # end of options, stop breaking them up
+    --)
+      options+=(--endopts)
+      shift
+      options+=("${@}")
+      break
+      ;;
+    # otherwise, nothing special
+    *)
+      options+=("${1}")
+      ;;
+  esac
+
+  shift
+done
+# set new positional parameters to altered options. Set default to blank.
+set -- "${options[@]:-}"
+unset options
+
+
+
+
+# ---------------------------------------
+# Parse Options
+# ---------------------------------------
+
+# getopts and getopts have inconsistent behavior, so using a simple home-brewed
+# while loop. This isn't perfectly compliant with POSIX, but it's close enough
+# and this appears to be a widely used approach.
+#
+# More info:
+#   http://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html
+#   http://stackoverflow.com/a/14203146
+#   http://stackoverflow.com/a/7948533
+#
+# This section is stolen from William Melody's bash-boilerplate
+# <https://github.com/alphabetum/bash-boilerplate>
+while [ ${#} -gt 0 ]
+do
+    __option="${1:-}"
+    __maybe_param="${2:-}"
+
+    case "${__option}" in
+        -p|--png)
+            create_png=1
+            ;;
+        -w|--webp)
+		    if hash cwebp 2>/dev/null; then
+		        create_webp=1
+		    else
+		        e_warning "WEBP requires cwebp, but it's not installed. Ignore this option."
+		    fi
+            ;;
+
+        --force)
+            overwrite_output=1
+            ;;
+
+        -q|--quality)
+            _require_argument "${__option}" "${__maybe_param}"
+            output_quality="${__maybe_param}"
+            recursion_arguments_array+=(${__option} "${__maybe_param}")
+            shift
+            ;;
+
+        --endopts)
+            # Terminate option parsing.
+            break
+            ;;
+        -*)
+            # Assume option because of leading "-"
+            e_error "$(printf "Unexpected option: %s\n" "${__option}")"
+            ;;
+        *)
+            # "Anything else must be an image parameter"
+            # This is a WORKAROUND, as without this "*)" block any given image parameters
+            # after the arguments seem to get lost (i.e., stuck in last $__option checked).
+            input_pdf_array+=("${__option}")
+            ;;
+    esac
+    shift
+
+done
+
+
+
+
+# ======================================
+#  The business part
+# ======================================
+
+
+# --------------------------------------
+#  Create conversion settings
+#  from settings and options.
+# --------------------------------------
 
 # Parameters for calling convert.
 declare -a convert_options_array=()
@@ -84,9 +296,10 @@ convert_options_array+=( -resize "${output_size}x${output_size}>")
 convert_options_array+=( -quality ${output_quality})
 
 
-# ======================================
+
+# --------------------------------------
 #  The main procedure
-# ======================================
+# --------------------------------------
 
 function main {
 
@@ -106,21 +319,24 @@ function main {
 	input_file_basename="${INPUT_FILE%.$input_file_extension}"
 	input_file_basename="${input_file_basename##*/}" # remove trailing slash
 
-	# Define output filename
+
+	# Always convert to JPEG
 	output_jpg="${input_file_basename}.jpg"
-	output_webp="${input_file_basename}.webp"
+	convertPdfToImage "${output_jpg}"
 
-	# Conversion
-	convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_jpg}" && {
-		e_success ""
-		echo "${INPUT_FILE}"[${input_page}] → "${output_jpg}"
-	}
 
-	# Conversion
-	convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_webp}" && {
-		e_success ""
-		echo "${INPUT_FILE}"[${input_page}] → "${output_webp}"
-	}
+	# Optionally, convert to PNG as well
+	if [ $create_png -gt 0 ]; then
+		output_png="${input_file_basename}.png"
+		convertPdfToImage "${output_png}"
+	fi
+
+
+	# Optionally, convert to WEBP as well
+	if [ $create_webp -gt 0 ]; then
+		output_webp="${input_file_basename}.webp"
+		convertPdfToImage "${output_webp}"
+	fi
 
 }
 
@@ -129,7 +345,7 @@ function main {
 # Loop over each argument
 # --------------------------------------
 
-for var in "$@"
+for var in "${input_pdf_array[@]}"
 do
 	main "${var}"
 done
