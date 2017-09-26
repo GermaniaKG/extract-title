@@ -299,7 +299,6 @@ convert_options_array+=( -resize "${output_size}x${output_size}>")
 convert_options_array+=( -quality ${output_quality})
 
 
-
 # --------------------------------------
 #  The main procedure
 # --------------------------------------

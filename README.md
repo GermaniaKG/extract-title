@@ -10,13 +10,13 @@
 ## Installation
 
 
-**Homebrew/OSX:** extract-title is available via Germania's [homebrew-images](https://github.com/GermaniaKG/homebrew-images) tap.
+**Homebrew/MacOS:** extract-title is available via Germania's [homebrew-images](https://github.com/GermaniaKG/homebrew-images) tap.
 
 ```bash
 $ brew install germaniakg/images/extract-title
 ```
 
-**Linux:** Clone the repo somewhere. Do not forget to add the **extract-title** directory to your local **PATH** variable or add a symlink to your *bin* directory.
+**Linux:** Clone the repo somewhere. Do not forget to add the **extract-title** directory to your local *PATH* variable or add a symlink to your *bin* directory.
 
 ```bash
 $ git clone https://github.com/GermaniaKG/extract-title.git extract-title
