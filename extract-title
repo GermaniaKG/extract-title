@@ -94,27 +94,6 @@ readonly OPTIONS_LIST="pwq:"
 
 
 
-# --------------------------------------
-# convertPdfToImage()
-#
-# Usage: convertPdfToImage outputfile
-# --------------------------------------
-
-function convertPdfToImage {
-	local output_image="${1}"
-
-	if [ ! -f "${output_image}" ] || [ $overwrite_output -gt 0 ]; then
-		convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_image}" && {
-			file_size_kb="$(du -k "${output_image}" | cut -f1)"
-			e_success ""
-			echo "${INPUT_FILE}"[${input_page}] → "${output_image} (${file_size_kb}kB)"
-		}
-	else
-		e_warning "$(printf '%s exists. Skipped.' "${output_image}")"
-	fi
-}
-
-
 
 
 # ======================================
@@ -278,6 +257,30 @@ done
 # ======================================
 #  The business part
 # ======================================
+
+
+
+
+# --------------------------------------
+# convertPdfToImage()
+#
+# Usage: convertPdfToImage outputfile
+# --------------------------------------
+
+function convertPdfToImage {
+	local output_image="${1}"
+
+	if [ ! -f "${output_image}" ] || [ $overwrite_output -gt 0 ]; then
+		convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_image}" && {
+			file_size_kb="$(du -k "${output_image}" | cut -f1)"
+			e_success ""
+			echo "${INPUT_FILE}"[${input_page}] → "${output_image} (${file_size_kb}kB)"
+		}
+	else
+		e_warning "$(printf '%s exists. Skipped.' "${output_image}")"
+	fi
+}
+
 
 
 # --------------------------------------
