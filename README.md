@@ -1,10 +1,11 @@
 # Germania KG · extract-title
 
-**Extract the first page of a PDF into a JPEG file.**
+**Extract the first page of a PDF into a JPEG or PNG or WebP file.**
 
 ## Requirements
 
-This tool requires **ImageMagick:** [Project page](https://www.imagemagick.org/script/index.php) · [brew formula](http://formulae.brew.sh/formula/imagemagick)
+- This tool requires **ImageMagick's** *convert* tool. See [project page](https://www.imagemagick.org/script/index.php) or [brew formula.](http://formulae.brew.sh/formula/imagemagick) 
+- When you aim at **WebP** images, ImageMagick is required to work with Google's *cwebp* image compressor. See [project page](https://developers.google.com/speed/webp/docs/cwebp) or [brew formula.](http://formulae.brew.sh/formula/webp)
 
 ## Installation
 
@@ -15,7 +16,7 @@ This tool requires **ImageMagick:** [Project page](https://www.imagemagick.org/s
 $ brew install germaniakg/images/extract-title
 ```
 
-**Linux:** Clone the repo somewhere. Do not forget to add the **extract-title** directory to your local **$PATH** variable.
+**Linux:** Clone the repo somewhere. Do not forget to add the **extract-title** directory to your local **PATH** variable or add a symlink to your *bin* directory.
 
 ```bash
 $ git clone https://github.com/GermaniaKG/extract-title.git extract-title
@@ -23,7 +24,7 @@ $ git clone https://github.com/GermaniaKG/extract-title.git extract-title
 
 ## Usage
 
-Pass one or more PDF file or a wildcard argument:
+Pass one or more PDF file or a wildcard argument. Optionally, control output with command line options.
 
 ```bash
 $ extract-title [options] *.pdf
@@ -35,14 +36,14 @@ $ extract-title [options] <file> [ <file> … ]
 Option | Description
 :-----|:------------
 -p, --png | Create a PNG file as well
--w, --webp | Create a WEBP file as well. Requires *cweb* to be installed, will be ignored otherwise.
--q, --quality *int* | Output quality, defaults to 90
+-w, --webp | Create a WebP file as well. Requires *ImageMagick* to work with *cweb*, will be ignored otherwise.
+-q *int*, --quality *int* | Output quality as integer, defaults to 90
 --force | Overwrite existing files
 
 ### Examples
 
-Create JPEG, PNG and WEBP with lower quality.
-If a matching JPG/PNG/WEBP output file exists, this conversion will be skipped.
+Create JPEG and additionally PNG and WebP. Create with lower quality than usual 90% quality.
+If a matching output file exists, skip conversion for this file format.
 
 ```bash
 $ extract-title -pw --quality 50 *.pdf
