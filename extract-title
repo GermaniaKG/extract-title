@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+
+# Runtime Environment
+set -o errexit
+set -o nounset
+set -o pipefail
+# set -o xtrace
+
+
+# --------------------------------------
+# Output and formatting functions
+# --------------------------------------
+
+# Formatting stuff
+readonly C_RED='\033[0;31m'
+readonly C_GREEN='\033[0;32m'
+readonly C_ORANGE=$(tput setaf 3)
+readonly NC='\033[0m' # No Color
+
+
+# Error message and error exit, redirecting stdout to stderr
+function e_error {
+	echo -e >&2 "${C_RED}Error: ${*}${NC}";
+	exit 1;
+}
+
+function e_warning {
+  echo -e "${C_ORANGE}Warning: ${*}${NC}"
+}
+
+function e_success () {
+  printf "${C_GREEN}✔ %s${NC}" "${*-}"
+}
+
+
+# ---------------------------------------
+# Print short help if no arguments
+# ---------------------------------------
+
+readonly SCRIPT_NAME=$(basename "${0}")
+
+if [ "$#" -eq 0 ]; then
+	echo "Usage: ${SCRIPT_NAME} <pdf> [pdf] ..."
+	echo "       ${SCRIPT_NAME} *.pdf"
+	exit 1
+fi
+
+
+# --------------------------------------
+# Requirements
+# --------------------------------------
+
+# Check on Requirements
+function require  {
+	command -v "${1}" >/dev/null 2>&1 || e_error "$(printf "Program '%s' required, but it's not installed" "${1}")"
+}
+
+require convert
+require tput
+
+
+# --------------------------------------
+# Configuration
+# --------------------------------------
+
+
+# Which page to extract
+declare -i input_page=0
+
+# Define output's longer side pixel size
+declare -i output_size=1200
+
+# Define output's JPEG quality
+declare -i output_quality=95
+
+# Parameters for calling convert.
+declare -a convert_options_array=()
+
+convert_options_array+=( -density 600)
+convert_options_array+=( -background white)
+convert_options_array+=( -alpha remove)
+convert_options_array+=( -colorspace sRGB)
+convert_options_array+=( -resize "${output_size}x${output_size}>")
+convert_options_array+=( -quality ${output_quality})
+
+
+# ======================================
+#  The main procedure
+# ======================================
+
+function main {
+
+	# Take image from first parameter
+	declare INPUT_FILE="${1}"
+
+
+	# Just in case $INPUT_FILE is NOT a regular file
+	if [ ! -f "${INPUT_FILE}" ]; then
+		e_warning "$(printf '%s is not a regular file. Ignoring.' "${INPUT_FILE}")"
+		return;
+	fi
+
+
+	# File name magic
+	input_file_extension="${INPUT_FILE##*.}";
+	input_file_basename="${INPUT_FILE%.$input_file_extension}"
+	input_file_basename="${input_file_basename##*/}" # remove trailing slash
+
+	# Define output filename
+	output_jpg="${input_file_basename}.jpg"
+
+	# Conversion
+	convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_jpg}" && {
+		e_success ""
+		echo "${INPUT_FILE}"[${input_page}] → "${output_jpg}"
+	}
+
+}
+
+
+# --------------------------------------
+# Loop over each argument
+# --------------------------------------
+
+for var in "$@"
+do
+	main "${var}"
+done
+
+
