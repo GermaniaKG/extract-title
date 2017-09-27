@@ -232,6 +232,13 @@ do
             shift
             ;;
 
+       	--size)
+            _require_argument "${__option}" "${__maybe_param}"
+            output_size="${__maybe_param}"
+            recursion_arguments_array+=(${__option} "${__maybe_param}")
+            shift
+            ;;
+
         --endopts)
             # Terminate option parsing.
             break
