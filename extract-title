@@ -20,16 +20,16 @@ readonly NC='\033[0m' # No Color
 
 # Error message and error exit, redirecting stdout to stderr
 function e_error {
-	echo -e >&2 "${C_RED}Error: ${*}${NC}";
+	echo -e >&2 "${C_RED}✘ Error:${NC} ${*-}";
 	exit 1;
 }
 
 function e_warning {
-  echo -e "${C_ORANGE}Warning: ${*}${NC}"
+  echo -e "${C_ORANGE}❱ Warning:${NC} ${*-}"
 }
 
 function e_success () {
-  printf "${C_GREEN}✔ %s${NC}" "${*-}"
+  echo -e "${C_GREEN}✔ Success:${NC} ${*-}"
 }
 
 
@@ -91,7 +91,6 @@ declare -a input_pdf_array
 # Very much like getopts, expected short options should be appended to the
 # string here. Any option followed by a ':' takes a required argument.
 readonly OPTIONS_LIST="pwq:"
-
 
 
 
@@ -280,8 +279,7 @@ function convertPdfToImage {
 	if [ ! -f "${output_image}" ] || [ $overwrite_output -gt 0 ]; then
 		convert "${convert_options_array[@]}" "${INPUT_FILE}"[${input_page}] "${output_image}" && {
 			file_size_kb="$(du -k "${output_image}" | cut -f1)"
-			e_success ""
-			echo "${INPUT_FILE}"[${input_page}] → "${output_image} (${file_size_kb}kB)"
+			e_success "${INPUT_FILE}"[${input_page}] → "${output_image} (${file_size_kb}kB)"
 		}
 	else
 		e_warning "$(printf '%s exists. Skipped.' "${output_image}")"
