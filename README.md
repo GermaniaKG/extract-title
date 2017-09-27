@@ -38,7 +38,9 @@ Option | Description
 -p, --png | Create a PNG file as well
 -w, --webp | Create a WebP file as well. Requires *ImageMagick* to work with *cweb*, will be ignored otherwise.
 -q *int*, --quality *int* | Output quality as integer, defaults to 90
+--size *int* | Pixel length on longer side; defaults to 1200 
 --force | Overwrite existing files
+
 
 ### Examples
 
