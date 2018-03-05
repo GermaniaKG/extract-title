@@ -25,11 +25,11 @@ function e_error {
 }
 
 function e_warning {
-  echo -e "${C_ORANGE}❱ Warning:${NC} ${*-}"
+	echo -e "${C_ORANGE}❱ Warning:${NC} ${*-}"
 }
 
 function e_success () {
-  echo -e "${C_GREEN}✔ Success:${NC} ${*-}"
+	echo -e "${C_GREEN}✔ Success:${NC} ${*-}"
 }
 
 
@@ -73,6 +73,9 @@ declare -i output_size=1200
 # Define output's JPEG quality
 declare -i output_quality=90
 
+# Suffix to append on output filename
+declare output_suffix=""
+
 
 # Wether to create a PNG file as well
 declare -i create_png=0
@@ -112,18 +115,18 @@ readonly OPTIONS_LIST="pwq:"
 # --------------------------------------
 
 _require_argument() {
-    # Set local variables from arguments.
-    #
-    # NOTE: 'local' is a non-POSIX bash feature and keeps the variable local to
-    # the block of code, as defined by curly braces. It's easiest to just think
-    # of them as local to a function.
-    local _option="${1:-}"
-    local _argument="${2:-}"
+		# Set local variables from arguments.
+		#
+		# NOTE: 'local' is a non-POSIX bash feature and keeps the variable local to
+		# the block of code, as defined by curly braces. It's easiest to just think
+		# of them as local to a function.
+		local _option="${1:-}"
+		local _argument="${2:-}"
 
-    if [[ -z "${_argument}" ]] || [[ "${_argument}" =~ ^- ]]
-    then
-        e_error "$(printf "Option requires a argument: %s\n" "${_option}")"
-    fi
+		if [[ -z "${_argument}" ]] || [[ "${_argument}" =~ ^- ]]
+		then
+				e_error "$(printf "Option requires a argument: %s\n" "${_option}")"
+		fi
 }
 
 
@@ -142,44 +145,44 @@ unset options
 # while the number of arguments is greater than 0
 while ((${#}))
 do
-  case ${1} in
-    # if option is of type -ab
-    -[!-]?*)
-      # loop over each character starting with the second
-      for ((i=1; i<${#1}; i++))
-      do
-        # extract 1 character from position 'i'
-        c=${1:i:1}
-        # add current char to options
-        options+=("-${c}")
+	case ${1} in
+		# if option is of type -ab
+		-[!-]?*)
+			# loop over each character starting with the second
+			for ((i=1; i<${#1}; i++))
+			do
+				# extract 1 character from position 'i'
+				c=${1:i:1}
+				# add current char to options
+				options+=("-${c}")
 
-        # if option takes a required argument, and it's not the last char
-        # make the rest of the string its argument
-        if [[ ${OPTIONS_LIST} = *"${c}:"* && ${1:i+1} ]]
-        then
-          options+=("${1:i+1}")
-          break
-        fi
-      done
-      ;;
-    # if option is of type --foo=bar, split on first '='
-    --?*=*)
-      options+=("${1%%=*}" "${1#*=}")
-      ;;
-    # end of options, stop breaking them up
-    --)
-      options+=(--endopts)
-      shift
-      options+=("${@}")
-      break
-      ;;
-    # otherwise, nothing special
-    *)
-      options+=("${1}")
-      ;;
-  esac
+				# if option takes a required argument, and it's not the last char
+				# make the rest of the string its argument
+				if [[ ${OPTIONS_LIST} = *"${c}:"* && ${1:i+1} ]]
+				then
+					options+=("${1:i+1}")
+					break
+				fi
+			done
+			;;
+		# if option is of type --foo=bar, split on first '='
+		--?*=*)
+			options+=("${1%%=*}" "${1#*=}")
+			;;
+		# end of options, stop breaking them up
+		--)
+			options+=(--endopts)
+			shift
+			options+=("${@}")
+			break
+			;;
+		# otherwise, nothing special
+		*)
+			options+=("${1}")
+			;;
+	esac
 
-  shift
+	shift
 done
 # set new positional parameters to altered options. Set default to blank.
 set -- "${options[@]:-}"
@@ -205,55 +208,62 @@ unset options
 # <https://github.com/alphabetum/bash-boilerplate>
 while [ ${#} -gt 0 ]
 do
-    __option="${1:-}"
-    __maybe_param="${2:-}"
+		__option="${1:-}"
+		__maybe_param="${2:-}"
 
-    case "${__option}" in
-        -p|--png)
-            create_png=1
-            ;;
-        -w|--webp)
-		    if hash cwebp 2>/dev/null; then
-		        create_webp=1
-		    else
-		        e_warning "WEBP requires cwebp, but it's not installed. Ignore this option."
-		    fi
-            ;;
+		case "${__option}" in
+				-p|--png)
+						create_png=1
+						;;
+				-w|--webp)
+				if hash cwebp 2>/dev/null; then
+						create_webp=1
+				else
+						e_warning "WEBP requires cwebp, but it's not installed. Ignore this option."
+				fi
+						;;
 
-        --force)
-            overwrite_output=1
-            ;;
+				--force)
+						overwrite_output=1
+						;;
 
-        -q|--quality)
-            _require_argument "${__option}" "${__maybe_param}"
-            output_quality="${__maybe_param}"
-            recursion_arguments_array+=(${__option} "${__maybe_param}")
-            shift
-            ;;
+				-q|--quality)
+						_require_argument "${__option}" "${__maybe_param}"
+						output_quality="${__maybe_param}"
+						recursion_arguments_array+=(${__option} "${__maybe_param}")
+						shift
+						;;
 
-       	--size)
-            _require_argument "${__option}" "${__maybe_param}"
-            output_size="${__maybe_param}"
-            recursion_arguments_array+=(${__option} "${__maybe_param}")
-            shift
-            ;;
+				--size)
+						_require_argument "${__option}" "${__maybe_param}"
+						output_size="${__maybe_param}"
+						recursion_arguments_array+=(${__option} "${__maybe_param}")
+						shift
+						;;
 
-        --endopts)
-            # Terminate option parsing.
-            break
-            ;;
-        -*)
-            # Assume option because of leading "-"
-            e_error "$(printf "Unexpected option: %s\n" "${__option}")"
-            ;;
-        *)
-            # "Anything else must be an image parameter"
-            # This is a WORKAROUND, as without this "*)" block any given image parameters
-            # after the arguments seem to get lost (i.e., stuck in last $__option checked).
-            input_pdf_array+=("${__option}")
-            ;;
-    esac
-    shift
+				--suffix)
+						_require_argument "${__option}" "${__maybe_param}"
+						output_suffix="${__maybe_param}"
+						recursion_arguments_array+=(${__option} "${__maybe_param}")
+						shift
+						;;
+
+				--endopts)
+						# Terminate option parsing.
+						break
+						;;
+				-*)
+						# Assume option because of leading "-"
+						e_error "$(printf "Unexpected option: %s\n" "${__option}")"
+						;;
+				*)
+						# "Anything else must be an image parameter"
+						# This is a WORKAROUND, as without this "*)" block any given image parameters
+						# after the arguments seem to get lost (i.e., stuck in last $__option checked).
+						input_pdf_array+=("${__option}")
+						;;
+		esac
+		shift
 
 done
 
@@ -328,20 +338,20 @@ function main {
 
 
 	# Always convert to JPEG
-	output_jpg="${input_file_basename}.jpg"
+	output_jpg="${input_file_basename}${output_suffix}.jpg"
 	convertPdfToImage "${output_jpg}"
 
 
 	# Optionally, convert to PNG as well
 	if [ $create_png -gt 0 ]; then
-		output_png="${input_file_basename}.png"
+		output_png="${input_file_basename}${output_suffix}.png"
 		convertPdfToImage "${output_png}"
 	fi
 
 
 	# Optionally, convert to WEBP as well
 	if [ $create_webp -gt 0 ]; then
-		output_webp="${input_file_basename}.webp"
+		output_webp="${input_file_basename}${output_suffix}.webp"
 		convertPdfToImage "${output_webp}"
 	fi
 
