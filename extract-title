@@ -26,7 +26,7 @@ function e_error {
 }
 
 function e_info {
-	echo -e "${C_ORANGE}❱ Info:${NC} ${*-}"
+	echo -e "${C_BLUE}❱ Info:${NC} ${*-}"
 }
 
 function e_warning {
