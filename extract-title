@@ -15,6 +15,7 @@ set -o pipefail
 readonly C_RED='\033[0;31m'
 readonly C_GREEN='\033[0;32m'
 readonly C_ORANGE=$(tput setaf 3)
+readonly C_BLUE='\033[1;34m'
 readonly NC='\033[0m' # No Color
 
 
@@ -22,6 +23,10 @@ readonly NC='\033[0m' # No Color
 function e_error {
 	echo -e >&2 "${C_RED}✘ Error:${NC} ${*-}";
 	exit 1;
+}
+
+function e_info {
+	echo -e "${C_ORANGE}❱ Info:${NC} ${*-}"
 }
 
 function e_warning {
@@ -292,7 +297,7 @@ function convertPdfToImage {
 			e_success "${INPUT_FILE}"[${input_page}] → "${output_image} (${file_size_kb}kB)"
 		}
 	else
-		e_warning "$(printf '%s exists. Skipped.' "${output_image}")"
+		e_info "$(printf '%s exists. Skipped.' "${output_image}")"
 	fi
 }
 
